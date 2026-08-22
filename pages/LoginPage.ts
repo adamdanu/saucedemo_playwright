@@ -35,8 +35,14 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await this.fillUsername(username);
-    await this.fillPassword(password);
+    await this.usernameInput.scrollIntoViewIfNeeded();
+    await this.usernameInput.waitFor({ state: 'attached' });
+    await this.usernameInput.fill(username);
+    // Fallback retry: fill again if the field was cleared by a re-render
+    if ((await this.usernameInput.inputValue()) !== username) {
+      await this.usernameInput.fill(username);
+    }
+    await this.passwordInput.fill(password);
     await this.clickLogin();
   }
 
