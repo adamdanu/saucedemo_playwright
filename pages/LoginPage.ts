@@ -35,14 +35,28 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await this.usernameInput.scrollIntoViewIfNeeded();
-    await this.usernameInput.waitFor({ state: 'attached' });
-    await this.usernameInput.fill(username);
-    // Fallback retry: fill again if the field was cleared by a re-render
-    if ((await this.usernameInput.inputValue()) !== username) {
-      await this.usernameInput.fill(username);
-    }
-    await this.passwordInput.fill(password);
+    // Use page.evaluate + nativeInputValueSetter so React reliably picks up the
+    // input changes. Playwright's fill()/type() can be dropped by React in CI.
+    await this.page.evaluate(
+      ({ selector, value }: { selector: string; value: string }) => {
+        const el = document.querySelector<HTMLInputElement>(selector)!;
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+        nativeSetter.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      { selector: '#user-name', value: username },
+    );
+    await this.page.evaluate(
+      ({ selector, value }: { selector: string; value: string }) => {
+        const el = document.querySelector<HTMLInputElement>(selector)!;
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+        nativeSetter.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      { selector: '#password', value: password },
+    );
     await this.clickLogin();
   }
 
