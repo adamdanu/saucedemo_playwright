@@ -14,6 +14,7 @@ Playwright E2E test suite for [SauceDemo](https://www.saucedemo.com) — built w
 7. [MCP (Model Context Protocol)](#7-mcp-model-context-protocol)
 8. [Memory System](#8-memory-system)
 9. [Test Coverage](#9-test-coverage)
+10. [GitHub Actions CI/CD](#10-github-actions-cicd)
 
 ---
 
@@ -232,19 +233,7 @@ Human asks AI ──► AI reads AGENTS.md ──► AI reads relevant memory �
 
 ### How to invoke AI assistance
 
-```bash
-# Use Claude Code in this project
-claude
-
-# Ask AI to create a test
-/ask Create a test for the About link in the menu
-
-# Ask AI to run tests
-/test Run the checkout flow test
-
-# Ask AI to explore the app
-/testscript Explore the product detail page
-```
+Just ask to AI, it will read the rules and memory to understand project conventions before making changes.
 
 ---
 
@@ -483,6 +472,115 @@ npm test
 3. Create test file: `tests/e2e/TC{NN}_{feature}.spec.ts`
 4. Add risk-based tag
 5. Verify: `npx playwright test tests/e2e/TC{NN}_*.spec.ts`
+
+---
+
+## 10. GitHub Actions CI/CD
+
+### Workflows
+
+| Workflow | File | Trigger | Purpose |
+|---------|------|---------|---------|
+| Playwright Tests | `test.yml` | PR open, manual | Run all tests, upload report |
+| Deploy Report | `deploy-report.yml` | Manual | Deploy latest report to GitHub Pages |
+
+### Setup
+
+#### 1. Add repository variables
+
+Go to **Settings → Variables and secrets → Repository variables**:
+
+| Variable | Value |
+|----------|-------|
+| `BASE_URL` | `https://www.saucedemo.com` |
+| `STANDARD_USER` | `standard_user` |
+| `LOCKED_OUT_USER` | `locked_out_user` |
+| `PROBLEM_USER` | `problem_user` |
+| `ERROR_USER` | `error_user` |
+| `VISUAL_USER` | `visual_user` |
+
+#### 2. Add repository secret
+
+Go to **Settings → Variables and secrets → Repository secrets**:
+
+| Secret | Value |
+|--------|-------|
+| `PASSWORD` | `secret_sauce` |
+
+#### 3. Enable GitHub Pages
+
+Go to **Settings → Pages → Source**:
+
+- Source: **GitHub Actions**
+- (No need to select a branch — workflows deploy directly)
+
+### Trigger options
+
+#### On Pull Request (automatic)
+Tests run on every PR open, sync, or reopen to `main`.
+
+#### Manual trigger
+Go to **Actions → Playwright Tests → Run workflow**:
+
+| Input | Description | Example |
+|-------|-------------|---------|
+| `test_tags` | Run only tagged tests | `@critical` |
+| (leave empty) | Run all tests | — |
+
+### Viewing reports
+
+After a run completes, the report is automatically deployed to:
+```
+https://<username>.github.io/<repo-name>/
+```
+
+Or manually trigger **Deploy Report** workflow to redeploy the latest artifact.
+
+### Workflow diagram
+
+```
+PR opened / Manual trigger
+        │
+        ▼
+┌──────────────────────────────────────┐
+│         test.yml                       │
+│                                       │
+│  ┌─────────────────────────────────┐   │
+│  │ test (chromium)                 │   │
+│  │  • npm ci                       │   │
+│  │  • playwright install --with-deps │   │
+│  │  • npx playwright test           │   │
+│  │  • Upload report artifact        │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ test (firefox)                  │   │
+│  └─────────────────────────────────┘   │
+│  ┌─────────────────────────────────┐   │
+│  │ test (webkit)                   │   │
+│  └─────────────────────────────────┘   │
+│                                       │
+│  test-summary                        │
+│  • Merge all reports                 │
+│  • Upload merged artifact             │
+│                                       │
+│  deploy-report                       │
+│  • Deploy to GitHub Pages            │
+└──────────────────────────────────────┘
+        │
+        ▼
+  GitHub Pages: test-report/
+```
+
+### Retry failed tests in CI
+
+```bash
+npx playwright test --project=chromium --retries=2
+```
+
+Retries are already configured in `playwright.config.ts`:
+```typescript
+retries: process.env.CI ? 2 : 0,
+```
 
 ---
 

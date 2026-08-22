@@ -1,0 +1,126 @@
+name: Playwright Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_tags:
+        description: 'Test tags to run (e.g., @critical, @high, leave empty for all)'
+        required: false
+        default: ''
+        type: string
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+env:
+  CI: true
+
+jobs:
+  test:
+    name: Run Tests (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Create .env file
+        run: |
+          cat > .env << 'EOF'
+          BASE_URL=${{ vars.BASE_URL || 'https://www.saucedemo.com' }}
+          STANDARD_USER=${{ vars.STANDARD_USER }}
+          LOCKED_OUT_USER=${{ vars.LOCKED_OUT_USER }}
+          PROBLEM_USER=${{ vars.PROBLEM_USER }}
+          ERROR_USER=${{ vars.ERROR_USER }}
+          VISUAL_USER=${{ vars.VISUAL_USER }}
+          PASSWORD=${{ secrets.PASSWORD }}
+          EOF
+
+      - name: Run Playwright tests
+        run: |
+          if [ -n "${{ github.event.inputs.test_tags }}" ]; then
+            npx playwright test --project=${{ matrix.browser }} --grep="${{ github.event.inputs.test_tags }}"
+          else
+            npx playwright test --project=${{ matrix.browser }}
+          fi
+
+      - name: Upload test results (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results-${{ matrix.browser }}
+          path: |
+            test-results/
+            test-output/
+          retention-days: 30
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+
+  merge-reports:
+    name: Merge Reports
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Playwright reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-*
+          path: all-reports
+          merge-multiple: true
+
+      - name: Merge reports
+        run: npx playwright merge-reports all-reports --reporter=list,html
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  deploy-report:
+    name: Deploy Report to GitHub Pages
+    needs: merge-reports
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - name: Download merged report
+        uses: actions/download-artifact@v4
+        with:
+          name: merged-playwright-report
+          path: _site
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
