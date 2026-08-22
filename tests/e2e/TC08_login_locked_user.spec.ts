@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../pages/LoginPage';
 
 test.describe('Login - Validation', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
   let loginPage: LoginPage;
 
   test.beforeEach(async ({ page }) => {
