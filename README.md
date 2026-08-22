@@ -481,8 +481,7 @@ npm test
 
 | Workflow | File | Trigger | Purpose |
 |---------|------|---------|---------|
-| Playwright Tests | `test.yml` | PR open, manual | Run all tests, upload report |
-| Deploy Report | `deploy-report.yml` | Manual | Deploy latest report to GitHub Pages |
+| Playwright Tests | `test.yml` | PR open, manual | Run tests, merge reports, deploy to GitHub Pages |
 
 ### Setup
 
@@ -530,11 +529,10 @@ Go to **Actions → Playwright Tests → Run workflow**:
 ### Viewing reports
 
 After a run completes, the report is automatically deployed to:
-```
-https://<username>.github.io/<repo-name>/
-```
 
-Or manually trigger **Deploy Report** workflow to redeploy the latest artifact.
+👉 **https://adamdanu.github.io/saucedemo_playwright/**
+
+Or re-run the workflow from Actions tab to redeploy with latest results.
 
 ### Workflow diagram
 
@@ -550,7 +548,7 @@ PR opened / Manual trigger
 │  │  • npm ci                       │   │
 │  │  • playwright install --with-deps │   │
 │  │  • npx playwright test           │   │
-│  │  • Upload report artifact        │   │
+│  │  • Upload blob report            │   │
 │  └─────────────────────────────────┘   │
 │  ┌─────────────────────────────────┐   │
 │  │ test (firefox)                  │   │
@@ -559,9 +557,9 @@ PR opened / Manual trigger
 │  │ test (webkit)                   │   │
 │  └─────────────────────────────────┘   │
 │                                       │
-│  test-summary                        │
-│  • Merge all reports                 │
-│  • Upload merged artifact             │
+│  merge-reports                       │
+│  • Download all blob reports         │
+│  • Merge into HTML report             │
 │                                       │
 │  deploy-report                       │
 │  • Deploy to GitHub Pages            │
