@@ -1,0 +1,15 @@
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# Playwright & Artifacts
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+.playwright-mcp/
+

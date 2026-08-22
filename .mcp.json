@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "node",
+      "args": [
+        "node_modules/playwright-core/lib/entry/mcp.js"
+      ],
+      "env": {
+        "PWDEBUG": "0",
+        "PLAYWRIGHT_BROWSERS_PATH": "0"
+      },
+      "description": "Playwright browser automation and testing MCP server"
+    }
+  }
+}
