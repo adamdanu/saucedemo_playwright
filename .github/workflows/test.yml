@@ -44,11 +44,11 @@ jobs:
         run: |
           cat > .env << 'EOF'
           BASE_URL=${{ vars.BASE_URL || 'https://www.saucedemo.com' }}
-          STANDARD_USER=${{ vars.STANDARD_USER }}
-          LOCKED_OUT_USER=${{ vars.LOCKED_OUT_USER }}
-          PROBLEM_USER=${{ vars.PROBLEM_USER }}
-          ERROR_USER=${{ vars.ERROR_USER }}
-          VISUAL_USER=${{ vars.VISUAL_USER }}
+          STANDARD_USER=${{ secrets.STANDARD_USER }}
+          LOCKED_OUT_USER=${{ secrets.LOCKED_OUT_USER }}
+          PROBLEM_USER=${{ secrets.PROBLEM_USER }}
+          ERROR_USER=${{ secrets.ERROR_USER }}
+          VISUAL_USER=${{ secrets.VISUAL_USER }}
           PASSWORD=${{ secrets.PASSWORD }}
           EOF
 
@@ -80,7 +80,7 @@ jobs:
   merge-reports:
     name: Merge Reports
     needs: test
-    if: always()
+    if: success()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +90,9 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps
+      - name: Create reports directory
+        run: mkdir -p all-reports
+
       - name: Download all Playwright reports
         uses: actions/download-artifact@v4
         with:
@@ -110,7 +113,7 @@ jobs:
   deploy-report:
     name: Deploy Report to GitHub Pages
     needs: merge-reports
-    if: always()
+    if: success()
     runs-on: ubuntu-latest
     permissions:
       contents: read

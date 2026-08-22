@@ -493,19 +493,19 @@ Go to **Settings → Variables and secrets → Repository variables**:
 | Variable | Value |
 |----------|-------|
 | `BASE_URL` | `https://www.saucedemo.com` |
-| `STANDARD_USER` | `standard_user` |
-| `LOCKED_OUT_USER` | `locked_out_user` |
-| `PROBLEM_USER` | `problem_user` |
-| `ERROR_USER` | `error_user` |
-| `VISUAL_USER` | `visual_user` |
 
-#### 2. Add repository secret
+#### 2. Add repository secrets
 
-Go to **Settings → Variables and secrets → Repository secrets**:
+Go to **Settings → Variables and secrets → Repository secrets**. Add the following secrets (values from your `.env` file):
 
 | Secret | Value |
 |--------|-------|
-| `PASSWORD` | `secret_sauce` |
+| `PASSWORD` | *(from `.env`)* |
+| `STANDARD_USER` | *(from `.env`)* |
+| `LOCKED_OUT_USER` | *(from `.env`)* |
+| `PROBLEM_USER` | *(from `.env`)* |
+| `ERROR_USER` | *(from `.env`)* |
+| `VISUAL_USER` | *(from `.env`)* |
 
 #### 3. Enable GitHub Pages
 
