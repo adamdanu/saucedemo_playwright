@@ -42,12 +42,13 @@ Edit `.env` with your credentials:
 ```env
 BASE_URL=https://www.saucedemo.com
 
-# Standard users
-STANDARD_USER=standard_user
-LOCKED_OUT_USER=locked_out_user
-PROBLEM_USER=problem_user
-ERROR_USER=error_user
-PASSWORD=secret_sauce
+# Test credentials (see .env.example)
+STANDARD_USER=<your_username>
+LOCKED_OUT_USER=<your_locked_user>
+PROBLEM_USER=<your_problem_user>
+ERROR_USER=<your_error_user>
+VISUAL_USER=<your_visual_user>
+PASSWORD=<your_password>
 ```
 
 > **Important**: `.env` is gitignored. Never commit credentials.
@@ -161,23 +162,48 @@ Test ──────► Page Object ──────► BasePage
 
 ```typescript
 // Test (tests/e2e/TC01_login.spec.ts)
-test('TC01: login with valid credentials', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+test.describe('Login', () => {
+  let loginPage: LoginPage;
+  let inventoryPage: InventoryPage;
 
-  await loginPage.goto();
-  await loginPage.login('standard_user', 'secret_sauce');
-  await expect(page).toHaveURL(/inventory\.html/);
+  test.beforeEach(async ({ page }) => {
+    loginPage = new LoginPage(page);
+    inventoryPage = new InventoryPage(page);
+  });
+
+  test('TC01: login with valid credentials', { tag: ['@critical', '@smoke'] }, async ({ page }) => {
+    await loginPage.goto();
+    await loginPage.expectLoginPageVisible();
+
+    const username = process.env.STANDARD_USER!;
+    const password = process.env.PASSWORD!;
+    await loginPage.login(username, password);
+
+    await inventoryPage.expectOnInventoryPage();
+  });
 });
 
 // Page Object (pages/LoginPage.ts)
 export class LoginPage extends BasePage {
-  readonly usernameInput = page.getByPlaceholder('Username');
-  readonly passwordInput = page.getByPlaceholder('Password');
-  readonly loginButton = page.getByRole('button', { name: 'Login' });
+  readonly usernameInput: Locator;
+  readonly passwordInput: Locator;
+  readonly loginButton: Locator;
+  readonly errorMessage: Locator;
 
-  async login(username: string, password: string) {
-    await this.usernameInput.fill(username);
-    await this.passwordInput.fill(password);
+  constructor(page: Page) {
+    super(page);
+    this.usernameInput = page.getByPlaceholder('Username');
+    this.passwordInput = page.getByPlaceholder('Password');
+    this.loginButton = page.getByRole('button', { name: 'Login' });
+    this.errorMessage = page.locator('[data-test="error"]');
+  }
+
+  async login(username: string, password: string): Promise<void> {
+    await this.usernameInput.scrollIntoViewIfNeeded();
+    await this.usernameInput.click();
+    await this.page.keyboard.type(username, { delay: 100 });
+    await this.passwordInput.click();
+    await this.page.keyboard.type(password, { delay: 100 });
     await this.loginButton.click();
   }
 }
