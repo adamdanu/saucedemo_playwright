@@ -35,12 +35,28 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    // Use type() (real keyboard events) instead of fill() so React's event
-    // listeners reliably pick up the input changes in all environments.
-    await this.usernameInput.click({ clickCount: 3 });
-    await this.usernameInput.press('Backspace');
-    await this.usernameInput.pressSequentially(username, { delay: 50 });
-    await this.passwordInput.fill(password);
+    // Use page.evaluate + nativeInputValueSetter so React reliably picks up the
+    // input changes. Playwright's fill()/type() can be dropped by React in CI.
+    await this.page.evaluate(
+      ({ selector, value }: { selector: string; value: string }) => {
+        const el = document.querySelector<HTMLInputElement>(selector)!;
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+        nativeSetter.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      { selector: '#user-name', value: username },
+    );
+    await this.page.evaluate(
+      ({ selector, value }: { selector: string; value: string }) => {
+        const el = document.querySelector<HTMLInputElement>(selector)!;
+        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+        nativeSetter.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      { selector: '#password', value: password },
+    );
     await this.clickLogin();
   }
 

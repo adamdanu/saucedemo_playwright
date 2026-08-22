@@ -15,8 +15,8 @@ setup('authenticate standard user', async ({ page }) => {
   const loginPage = new LoginPage(page);
   await loginPage.goto();
 
-  const user = process.env.STANDARD_USER || 'standard_user';
-  const password = process.env.PASSWORD || 'secret_sauce';
+  const user = process.env.STANDARD_USER!;
+  const password = process.env.PASSWORD!;
 
   await loginPage.login(user, password);
   await expect(page).toHaveURL(/inventory\.html/);
