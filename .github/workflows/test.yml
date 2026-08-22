@@ -62,6 +62,7 @@ jobs:
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: playwright-report-${{ matrix.browser }}
           path: playwright-report/
@@ -72,21 +73,30 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for artifacts to be ready
-        run: sleep 10
-
-      - name: Download all report artifacts
+      - name: Download chromium report
         uses: actions/download-artifact@v4
         with:
-          pattern: playwright-report-*
+          name: playwright-report-chromium
           path: all-reports
-          merge-multiple: true
+
+      - name: Download firefox report
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-firefox
+          path: all-reports
+
+      - name: Download webkit report
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-webkit
+          path: all-reports
 
       - name: Merge reports
         run: npx playwright merge-reports all-reports --reporter=html
 
       - name: Upload final merged report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: merged-playwright-report
           path: playwright-report/
