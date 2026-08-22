@@ -35,13 +35,11 @@ export class LoginPage extends BasePage {
   }
 
   async login(username: string, password: string): Promise<void> {
-    await this.usernameInput.scrollIntoViewIfNeeded();
-    await this.usernameInput.waitFor({ state: 'attached' });
-    await this.usernameInput.fill(username);
-    // Fallback retry: fill again if the field was cleared by a re-render
-    if ((await this.usernameInput.inputValue()) !== username) {
-      await this.usernameInput.fill(username);
-    }
+    // Use type() (real keyboard events) instead of fill() so React's event
+    // listeners reliably pick up the input changes in all environments.
+    await this.usernameInput.click({ clickCount: 3 });
+    await this.usernameInput.press('Backspace');
+    await this.usernameInput.pressSequentially(username, { delay: 50 });
     await this.passwordInput.fill(password);
     await this.clickLogin();
   }
