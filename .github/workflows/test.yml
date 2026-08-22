@@ -60,16 +60,6 @@ jobs:
             npx playwright test --project=${{ matrix.browser }}
           fi
 
-      - name: Upload test results (on failure)
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: playwright-results-${{ matrix.browser }}
-          path: |
-            test-results/
-            test-output/
-          retention-days: 30
-
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
         with:
@@ -80,20 +70,12 @@ jobs:
   merge-reports:
     name: Merge Reports
     needs: test
-    if: success()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      - name: Create reports directory
-        run: mkdir -p all-reports
+      - name: Wait for artifacts to be ready
+        run: sleep 10
 
-      - name: Download all Playwright reports
+      - name: Download all report artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: playwright-report-*
@@ -101,9 +83,9 @@ jobs:
           merge-multiple: true
 
       - name: Merge reports
-        run: npx playwright merge-reports all-reports --reporter=list,html
+        run: npx playwright merge-reports all-reports --reporter=html
 
-      - name: Upload merged report
+      - name: Upload final merged report
         uses: actions/upload-artifact@v4
         with:
           name: merged-playwright-report
@@ -113,7 +95,6 @@ jobs:
   deploy-report:
     name: Deploy Report to GitHub Pages
     needs: merge-reports
-    if: success()
     runs-on: ubuntu-latest
     permissions:
       contents: read
